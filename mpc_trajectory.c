@@ -89,10 +89,10 @@ extern int trajectory_mpc(double e1, double e2, MpcParams mpc_params, double *u)
     size_t F_0_rows = 4;
     size_t F_0_cols = 2;
     size_t size_F_1 = F_0_rows * F_0_cols * N * N; // F_1: [4 * N, 2 * N]
-    double *F_1 = malloc(size_F_1 * sizeof(double));
+    double *F_1 = calloc(size_F_1, sizeof(double));
     kron_eye(F_0, F_0_rows, F_0_cols, N, F_1);
     size_t size_F = size_F_1 + 2 * 2 * N * N; // F: [6 * N, 2 * N]
-    double *F = malloc(size_F * sizeof(double));
+    double *F = calloc(size_F, sizeof(double));
     memcpy(F, F_1, size_F_1 * sizeof(double));
     free(F_1);
 
@@ -101,16 +101,16 @@ extern int trajectory_mpc(double e1, double e2, MpcParams mpc_params, double *u)
     size_t G_0_rows = 2;
     size_t G_0_cols = 1;
     size_t size_G_1 = G_0_rows * G_0_cols * N * N; // G_1: [2 * N, N]
-    double *G_1 = malloc(size_G_1 * sizeof(double));
+    double *G_1 = calloc(size_G_1, sizeof(double));
     kron_eye(G_0, G_0_rows, G_0_cols, N, G_1);
     size_t size_G = size_G_1 + 4 * N * N; // G: [6 * N, N]
-    double *G = malloc(size_G * sizeof(double));
+    double *G = calloc(size_G, sizeof(double));
     memcpy(G + 4 * N * N, G_1, size_G_1 * sizeof(double));
     free(G_1);
 
     // Ain = [F, G]
     size_t size_Ain = size_F + size_G; // Ain: [6 * N, 3 * N]
-    double *Ain = malloc(size_Ain * sizeof(double));
+    double *Ain = calloc(size_Ain, sizeof(double));
     horzcat(F, 2 * N, G, N, 6 * N, Ain);
     free(F);
     free(G);
@@ -121,19 +121,19 @@ extern int trajectory_mpc(double e1, double e2, MpcParams mpc_params, double *u)
                     mpc_params.state_bounds[1],
                     mpc_params.state_bounds[1]};
     size_t size_h_1 = 4 * N; // h_1: [4 * N, 1]
-    double *h_1 = malloc(size_h_1 * sizeof(double));
+    double *h_1 = calloc(size_h_1, sizeof(double));
     for (int i = 0; i < N; i++)
     {
         memcpy(h_1 + i * 4, h_0, 4 * sizeof(double));
     }
     size_t size_h_2 = 2 * N; // h_2: [2 * N, 1]
-    double *h_2 = malloc(size_h_2 * sizeof(double));
+    double *h_2 = calloc(size_h_2, sizeof(double));
     for (int i = 0; i < size_h_2; i++)
     {
         h_2[i] = mpc_params.input_bound;
     }
     size_t size_bin = (size_h_1 + size_h_2) * 1; // bin: [6 * N, 1]
-    double *bin = malloc(size_bin * sizeof(double));
+    double *bin = calloc(size_bin, sizeof(double));
     memcpy(bin, h_1, size_h_1 * sizeof(double));
     free(h_1);
     memcpy(bin + 4 * N, h_2, size_h_2 * sizeof(double));
@@ -144,38 +144,38 @@ extern int trajectory_mpc(double e1, double e2, MpcParams mpc_params, double *u)
     size_t Q_rows, Q_cols;
     Q_rows = Q_cols = 2;
     size_t size_Q_bar_0 = Q_rows * Q_cols * (N - 1) * (N - 1); // Q_bar_0: [2 * (N - 1), 2 * (N - 1)]
-    double *Q_bar_0 = malloc(size_Q_bar_0 * sizeof(double));
+    double *Q_bar_0 = calloc(size_Q_bar_0, sizeof(double));
     kron_eye(mpc_params.Q, Q_rows, Q_cols, N - 1, Q_bar_0);
     size_t size_Q_bar = (2 * (N - 1) + 2) * (2 * (N - 1) + 2); // Q_bar: [2 * N, 2 * N]
-    double *Q_bar = malloc(size_Q_bar * sizeof(double));
+    double *Q_bar = calloc(size_Q_bar, sizeof(double));
     blkdiag(Q_bar_0, 2 * (N - 1), 2 * (N - 1), mpc_params.Pf, 2, 2, Q_bar);
     free(Q_bar_0);
 
     // R_bar = kron(eye(N), R)
     size_t size_R_bar = N * N; // R_bar: [N, N]
-    double *R_bar = malloc(size_R_bar * sizeof(double));
+    double *R_bar = calloc(size_R_bar, sizeof(double));
     kron_eye(&mpc_params.R, 1, 1, N, R_bar);
 
     // H=blkdiag(Q_bar,R_bar);
     size_t size_H = (2 * N + N) * (2 * N + N); // H: [3 * N, 3 * N]
-    double *H = malloc(size_H * sizeof(double));
+    double *H = calloc(size_H, sizeof(double));
     blkdiag(Q_bar, 2 * N, 2 * N, R_bar, N, N, H);
     free(Q_bar);
     free(R_bar);
 
     // f = []
     size_t H_rows = 3 * N;
-    double *f = malloc(H_rows * sizeof(double));
+    double *f = calloc(H_rows, sizeof(double));
 
     // Aeq1 = kron(eye(A_cols), eye(N))
     size_t A_rows, A_cols, B_rows;
     A_rows = A_cols = B_rows = 2;
     size_t size_Aeq_0 = N * N; // Aeq_0: [N, N]
-    double *Aeq_0 = malloc(size_Aeq_0 * sizeof(double));
+    double *Aeq_0 = calloc(size_Aeq_0, sizeof(double));
     double one = 1.0;
     kron_eye(&one, 1, 1, N, Aeq_0);                   // eye(N)
     size_t size_Aeq_1 = A_cols * A_cols * size_Aeq_0; // Aeq_1: [2 * N, 2 * N]
-    double *Aeq_1 = malloc(size_Aeq_1 * sizeof(double));
+    double *Aeq_1 = calloc(size_Aeq_1, sizeof(double));
     kron_eye(Aeq_0, N, N, A_cols, Aeq_1);
     free(Aeq_0);
 
@@ -187,12 +187,12 @@ extern int trajectory_mpc(double e1, double e2, MpcParams mpc_params, double *u)
     // Aeq2 = kron(eye(N), -B)
     double B_neg[] = {-mpc_params.B[0], -mpc_params.B[1]};
     size_t size_Aeq_2 = 2 * N * 1 * N; // Aeq_2: [2 * N, N]
-    double *Aeq_2 = malloc(size_Aeq_2 * sizeof(double));
+    double *Aeq_2 = calloc(size_Aeq_2, sizeof(double));
     kron_eye(B_neg, 2, 1, N, Aeq_2);
 
     // Aeq = [Aeq1, Aeq2]
     size_t size_Aeq = size_Aeq_1 + size_Aeq_2;
-    double *Aeq = malloc(size_Aeq * sizeof(double)); // Aeq: [2 * N, 3 * N]
+    double *Aeq = calloc(size_Aeq, sizeof(double)); // Aeq: [2 * N, 3 * N]
     horzcat(Aeq_1, 2 * N, Aeq_2, N, 2 * N, Aeq);
     free(Aeq_1);
     free(Aeq_2);
@@ -200,10 +200,10 @@ extern int trajectory_mpc(double e1, double e2, MpcParams mpc_params, double *u)
     // beq = [A * x; zeros(A_cols * (N - 1), 1)]
     double x[] = {e1, e2};
     size_t size_Ax = 2; // Ax: [2, 1]
-    double *Ax = malloc(size_Ax * sizeof(double));
+    double *Ax = calloc(size_Ax, sizeof(double));
     y_Ax(mpc_params.A, x, Ax, 2, 2);
     size_t size_beq = (2 + A_cols * (N - 1)) * 1; // beq: [2 * N, 1]
-    double *beq = malloc(size_beq * sizeof(double));
+    double *beq = calloc(size_beq, sizeof(double));
     memcpy(beq, Ax, size_Ax);
     free(Ax);
 
@@ -314,7 +314,7 @@ void test_kron_eye()
     size_t M_rows = 2;
     size_t M_cols = 3;
     size_t n = 3;
-    double *B = malloc(M_rows * n * M_cols * n * sizeof(double));
+    double *B = calloc(M_rows * n * M_cols * n, sizeof(double));
     kron_eye(M, M_rows, M_cols, n, B);
     print_matrix(B, M_rows * n, M_cols * n);
 }
@@ -352,7 +352,7 @@ void test_blkdiag()
     size_t C_rows = A_rows + B_rows;
     size_t C_cols = A_cols + B_cols;
     size_t size_C = C_rows * C_cols;
-    double *C = malloc(size_C * sizeof(double));
+    double *C = calloc(size_C, sizeof(double));
     blkdiag(A, A_rows, A_cols, B, B_rows, B_cols, C);
     print_matrix(C, C_rows, C_cols);
 }
