@@ -29,18 +29,18 @@ void print_matrix(double *M, size_t rows, size_t cols);
 int main(void)
 {
     // Configure here
-    MpcParams mpc_params = {{1.0, 2.0, 3.0, 4.0},
-                            {1.0, 2.0},
+    MpcParams mpc_params = {{1.0, 0.024, 0.0, 1.0},
+                            {0.0111, 0.0219},
                             3,
-                            {1.0, 0.0, 0.0, 1.0},
-                            {1.0, 0.0, 0.0, 1.0},
+                            {0.00001, 0.0, 0.0, 0.00001},
+                            {1.0, 0.0, 0.0, 100.0},
                             1.0,
-                            {10.0, 20.0},
-                            100.0,
+                            {100.0, 100.0},
+                            0.3491,
                             {.verbose = 2,
                              .maxit = 30},
                             true};
-    double x0[] = {0.0, 0.0};
+    double x0[] = {8.0, 3.0};
 
     double u = 0.0;
     int exit_code = trajectory_mpc(x0[0], x0[1], mpc_params, &u);
@@ -204,7 +204,7 @@ extern int trajectory_mpc(double e1, double e2, MpcParams mpc_params, double *u)
     y_Ax(mpc_params.A, x, Ax, 2, 2);
     size_t size_beq = (2 + A_cols * (N - 1)) * 1; // beq: [2 * N, 1]
     double *beq = calloc(size_beq, sizeof(double));
-    memcpy(beq, Ax, size_Ax);
+    memcpy(beq, Ax, size_Ax * sizeof(double));
     free(Ax);
 
     size_t size_in = size_bin;
@@ -372,12 +372,12 @@ void messy_matrix_function(double *res, size_t res_rows, size_t res_cols, double
     A = [5, 6,
          7, 8 ]
     ->
-    res = [ 1, 0, 0, 0, 0, 0,
-            0, 1, 0, 0, 0, 0,
-            5, 6, 1, 0, 0, 0,
-            7, 8, 0, 1, 0, 0,
-            0, 0, 5, 6, 1, 0,
-            0, 0, 7, 8, 0, 1  ]
+    res = [  1,  0,  0,  0,  0,  0,
+             0,  1,  0,  0,  0,  0,
+            -5, -6,  1,  0,  0,  0,
+            -7, -8,  0,  1,  0,  0,
+             0,  0, -5, -6,  1,  0,
+             0,  0, -7, -8,  0,  1  ]
     */
 
     size_t size_indices = (res_cols - M_cols) / M_cols;
@@ -389,7 +389,7 @@ void messy_matrix_function(double *res, size_t res_rows, size_t res_cols, double
     }
     uint32_t row_indices[size_indices];
     uint32_t *p_row_indices = (uint32_t *)&row_indices;
-    for (uint32_t i = M_rows; i < res_rows - M_rows; i += M_rows)
+    for (uint32_t i = M_rows; i <= res_rows - M_rows; i += M_rows)
     {
         *p_row_indices++ = i;
     }
@@ -397,7 +397,7 @@ void messy_matrix_function(double *res, size_t res_rows, size_t res_cols, double
     {
         for (int j = 0; j < M_rows * M_cols; j++)
         {
-            *(res + res_cols * row_indices[i] + col_indices[i] + (j / M_cols) * res_cols + (j % M_cols)) = M[j % (M_rows * M_cols)];
+            *(res + res_cols * row_indices[i] + col_indices[i] + (j / M_cols) * res_cols + (j % M_cols)) = -M[j % (M_rows * M_cols)];
         }
     }
 }
@@ -411,7 +411,7 @@ void print_matrix(double *M, size_t rows, size_t cols)
         {
             printf("\n  ");
         }
-        printf("%4.1f", M[i]);
+        printf("%4.4f", M[i]);
         if (i != rows * cols - 1)
         {
             printf(", ");
