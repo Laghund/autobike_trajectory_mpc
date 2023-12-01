@@ -274,6 +274,7 @@ extern int trajectory_mpc(double e1, double e2, MpcParams mpc_params, double *u)
 
     QP_CLEANUP_dense(mpc_qp);
     free(H);
+    free(f);
     free(Ain);
     free(Aeq);
     free(bin);
